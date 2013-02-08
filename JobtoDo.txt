@@ -11,4 +11,4 @@ issue type
 priorities
 workflow
 statuses
-custmerfield
+customerfield
