@@ -1,0 +1,14 @@
+
+project
+project type
+user
+user group
+pj role
+attachments
+Issue
+permission schema
+issue type
+priorities
+workflow
+statuses
+custmerfield

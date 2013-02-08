@@ -1,1 +1,2 @@
-将JIRA v4.3 数据库数据转换到 redmine 2.2版本
+Convert JIRA v4.3 database date into redmine 2.2
+database :Mysql
