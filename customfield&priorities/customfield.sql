@@ -44,7 +44,7 @@ case
  ,'0' as is_required,'0' as is_for_all,  /*is_required and is_visible will be fixed later*/
 '0' is_filter, '1' as searchable, 
 '' as default_value, '1' as editable, 
-'0' as visible,'0' multiple
+'1' as visible,'0' multiple
 from jira.customfield;
 
 /*
@@ -67,10 +67,9 @@ BEGIN
         DECLARE p_possible_value varchar(255) DEFAULT '---';
         DECLARE P_TEMP varchar(255) default '' ;
     DECLARE cur1 CURSOR 
-                                        FOR select fieldt.cfname,optiont.customvalue 
-                                                            from jira.customfieldoption optiont,jira.customfield fieldt
-                                                            where optiont.CUSTOMFIELD = fieldt.ID
-                                                            order by optiont.CUSTOMFIELDCONFIG,optiont.sequence;
+                FOR select fieldt.cfname,optiont.customvalue from jira.customfieldoption optiont,jira.customfield fieldt
+                     where optiont.CUSTOMFIELD = fieldt.ID
+                     order by optiont.CUSTOMFIELDCONFIG,optiont.sequence;
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done=1;   
     OPEN cur1;   
     loop1: LOOP   
@@ -140,31 +139,42 @@ select fields.id,trackers.id from
 
 
 /* 
-fix
 is_required.
-in jira, 
-you can set whether the field is(not) required among the different field config schemas.
+in jira, you can set whether the field is(not) required among the different field config schemas.
 but you can't do this in redmine.
-So I will set the field to be required if once it is required in jira.
+So I will set the field to be required if it is once required in jira.
+字段配置中决定是否是必填项
+
+
+*/
+
+#select * from bitnami_redmine.custom_fields
+update bitnami_redmine.custom_fields set is_required = '1'
+where name in (
+select cfname from jira.customfield
+where id in (
+select distinct(substr(FIELDIDENTIFIER,instr(FIELDIDENTIFIER,'_')+1,length(FIELDIDENTIFIER)))
+FROM jira.fieldlayoutitem 
+where ISREQUIRED = 'true'
+and FIELDIDENTIFIER like 'customfield%'
+    )
+)
+
+
+/* 
+is_for_all
+用于所有项目 需要等项目导入后才修改
 */
 
 
 select sc.name,sctab.NAME,fielditem.FIELDIDENTIFIER
 from fieldscreen sc,fieldscreentab sctab,
 fieldscreenlayoutitem fielditem 
-where sctab.FIELDSCREEN=sc.id
+where sctab.FIELDSCREEN = sc.id
 and fielditem.FIELDSCREENTAB = sctab.ID
-order by sc.NAME,sctab.SEQUENCE,fielditem.SEQUENCE
+order by sc.NAME,sctab.SEQUENCE,fielditem.SEQUENCE;
 
 
-select name,fieldlayout,FIELDIDENTIFIER,ishidden,isrequired 
-from fieldlayoutitem layoutitem,fieldlayout fieldlayout
-where layoutitem.FIELDLAYOUT = fieldlayout.ID
-order by name,FIELDIDENTIFIER
 
 
-/* 
-fix
-is_for_all, visible 
 
-*/
