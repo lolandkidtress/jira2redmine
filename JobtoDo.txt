@@ -1,14 +1,16 @@
 
-project
-project type
-user
-user group
-pj role
-attachments
+project		
+project his	
+project type	
+user		1
+user group	1
+pj role		X
+attachments	
 Issue
+issue his
+issue type    1
 permission schema
-issue type
-priorities
-workflow
-statuses
-customerfield
+priorities	1
+workflow	X
+statuses	1
+customerfield	 0.5

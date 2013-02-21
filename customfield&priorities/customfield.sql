@@ -55,22 +55,56 @@ fields_trackers
 
 /*
 custom_fields's possible_values
+
 */
 drop PROCEDURE bitnami_redmine.fieldoption;
 
 CREATE PROCEDURE bitnami_redmine.fieldoption()
 BEGIN   
     DECLARE p_cfname varchar(255) default '';   
-        DECLARE p_customvalue varchar(255);  
+    DECLARE p_customvalue varchar(255);  
     DECLARE done INT DEFAULT 0;
-        DECLARE cnt INT DEFAULT 0;
-        DECLARE p_possible_value varchar(255) DEFAULT '---';
-        DECLARE P_TEMP varchar(255) default '' ;
+    DECLARE cnt INT DEFAULT 0;
+        DECLARE rescnt INT DEFAULT 0;
+    DECLARE p_possible_value varchar(255) DEFAULT '---';
+    DECLARE P_TEMP varchar(255) default '' ;
     DECLARE cur1 CURSOR 
                 FOR select fieldt.cfname,optiont.customvalue from jira.customfieldoption optiont,jira.customfield fieldt
                      where optiont.CUSTOMFIELD = fieldt.ID
                      order by optiont.CUSTOMFIELDCONFIG,optiont.sequence;
-    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done=1;   
+    DECLARE CONTINUE HANDLER FOR NOT FOUND  
+    /*
+     Error :   1329: No data - zero rows fetched, selected, or processed  
+     #http://bugs.mysql.com/bug.php?id=42834      
+    */
+        begin
+            set done = 1;
+            #select 'NOT FOUND';
+            update bitnami_redmine.custom_fields set possible_values=p_possible_value
+      where name = P_TEMP;
+                            set cnt = row_count() + cnt;
+                        if cnt <> 0 then
+                            select cnt,'effected';
+                        else
+                            select 'alert:something wrong!';
+                        end if;
+        end; 
+    declare exit handler for sqlexception
+        
+    begin
+        #LEAVE loop1;
+      select 'sqlexception ERROR';
+      rollback;
+    end;  
+        
+        select count(*) into rescnt from (
+        select optiont.CUSTOMFIELD from jira.customfieldoption optiont
+        group by optiont.CUSTOMFIELD) res;
+        
+        select 'total',rescnt;
+        
+    start transaction;
+
     OPEN cur1;   
     loop1: LOOP   
     FETCH cur1 INTO p_cfname, p_customvalue;   
@@ -90,7 +124,7 @@ BEGIN
                     update bitnami_redmine.custom_fields set possible_values=p_possible_value
                     where name = P_TEMP;
                     
-                    set cnt = row_count();
+                    set cnt = row_count() + cnt;
                         if cnt <> 0 then
                             select cnt,'effected';
                         else
@@ -113,15 +147,27 @@ BEGIN
             end if;
         end if;
         
-        IF done=1 THEN   
+    IF done=1 THEN   
     LEAVE loop1;   
     END IF;   
     END LOOP loop1;   
-    CLOSE cur1;   
+    CLOSE cur1;
+
+                select 'last update',P_TEMP,p_possible_value;
+        
+                if rescnt <> cnt then
+            rollback;
+                        select '<>';
+        else
+            commit;  
+            select cnt,'commit';
+        end if;
+                
 END 
 ;
 
 call fieldoption()
+
 
 
 /*
@@ -175,6 +221,9 @@ and fielditem.FIELDSCREENTAB = sctab.ID
 order by sc.NAME,sctab.SEQUENCE,fielditem.SEQUENCE;
 
 
-
+/*
+custom_field_value
+需要等issue导入后才可以修改
+*/
 
 
