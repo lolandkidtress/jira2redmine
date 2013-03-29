@@ -9,8 +9,14 @@ attachments
 Issue
 issue his
 issue type    1
+issue vote
+issue watch
+
+issue timespent
 permission schema
 priorities	1
 workflow	X
 statuses	1
 customerfield	 0.5
+
+

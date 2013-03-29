@@ -1,25 +1,24 @@
 # jira2redmine
 
-# Convert JIRA v4.3 database date into redmine 2.2
+# Convert JIRA v4.3 into redmine 2.2
 
 ## Setup
 
 * [How to use](https://github.com/lolandkidtress/jira2redmine/blob/master/How2Use.txt/)
 
-
 ## Include
 * **user & group:**  
   Allows to migration user & group 
-* **project:**
+* **project:**  
   Allows to migration project & project type & project history
-* **issue:**
+* **issue:**  
   Allows to migration issue & issue history
-* **customerfield:**
+* **customerfield:**  
   Allows to migration customerfield  
 
 ## Not Include
 * **project role not include**
-* **workflow**
+* **workflow not include**
 
 
 ## Env
