@@ -1,4 +1,4 @@
-/*
+﻿/*
 	migration jira.priority,jira.resolution into redmine.enumerations
 	migration jira.customfieldoption,jira.customfield;
 
@@ -41,7 +41,7 @@ case
  then 255
  else '0' 
  end max_length
- ,'0' as is_required,'0' as is_for_all,  /*is_required and is_visible will be fixed later*/
+ ,'0' as is_required,'1' as is_for_all,  /*is_required and is_visible will be fixed later*/
 '0' is_filter, '1' as searchable, 
 '' as default_value, '1' as editable, 
 '1' as visible,'0' multiple
@@ -125,12 +125,14 @@ BEGIN
                     where name = P_TEMP;
                     
                     set cnt = row_count() + cnt;
-                        if cnt <> 0 then
+                        if row_count() <> 0 then
                             select cnt,'effected';
                         else
                             select 'alert:something wrong!';
                             LEAVE loop1;
                         end if;
+                    
+
                     #select 'reset';
                     set P_TEMP = p_cfname;
                     set p_possible_value =concat('---','\r\n- ',p_customvalue) ;
@@ -209,8 +211,8 @@ and FIELDIDENTIFIER like 'customfield%'
 
 /* 
 is_for_all
-用于所有项目 需要等项目导入后才修改
-*/
+是否 用于所有项目
+
 
 
 select sc.name,sctab.NAME,fielditem.FIELDIDENTIFIER
@@ -219,11 +221,118 @@ fieldscreenlayoutitem fielditem
 where sctab.FIELDSCREEN = sc.id
 and fielditem.FIELDSCREENTAB = sctab.ID
 order by sc.NAME,sctab.SEQUENCE,fielditem.SEQUENCE;
-
+*/
 
 /*
 custom_field_value
-需要等issue导入后才可以修改
+
+select fld.id,fld.cfname,
+fldv.issue,
+(select iss.summary from jira.jiraissue iss where iss.ID = fldv.ISSUE) as issuesubject,
+fldv.CUSTOMFIELD,
+concat(ifnull(fldv.STRINGVALUE,''),ifnull(fldv.NUMBERVALUE,''),ifnull(fldv.TEXTVALUE,''),ifnull(fldv.DATEVALUE,''))
+from jira.customfieldvalue fldv, jira.customfield fld
+where fld.id = fldv.CUSTOMFIELD;
+
+用于所有项目 需要等项目和自定义字段导入后才修改
 */
 
+drop PROCEDURE bitnami_redmine.custfidval_mig;
 
+CREATE PROCEDURE bitnami_redmine.custfidval_mig()
+BEGIN   
+    DECLARE p_cfname varchar(255) default ''; 
+    DECLARE p_isssubject varchar(255) default '';
+    DECLARE p_customvalue varchar(255); 
+        
+    DECLARE p_fldid varchar(255);
+    DECLARE p_issid varchar(255);
+        
+    DECLARE done INT DEFAULT 0;
+    DECLARE cnt INT DEFAULT 0;
+    DECLARE rescnt INT DEFAULT 0;
+    DECLARE p_possible_value varchar(255) DEFAULT '---';
+    DECLARE P_TEMP varchar(255) default '' ;
+        
+    DECLARE cur1 CURSOR 
+                FOR select fld.cfname,
+                                        (select iss.summary from jira.jiraissue iss where iss.ID = fldv.ISSUE) as issuesubject,
+                                        concat(ifnull(fldv.STRINGVALUE,''),ifnull(fldv.NUMBERVALUE,''),ifnull(fldv.TEXTVALUE,''),ifnull(fldv.DATEVALUE,'')) as value
+                                        from jira.customfieldvalue fldv, jira.customfield fld
+                                        where fld.id = fldv.CUSTOMFIELD
+                                        order by issuesubject,cfname;
+
+                                            
+    DECLARE CONTINUE HANDLER FOR NOT FOUND  
+
+        begin
+            set done = 1;
+            #select 'NOT FOUND';
+                            set cnt = row_count() + cnt;
+                        if cnt <> 0 then
+                            select cnt,'effected';
+                        else
+                            select 'alert:something wrong!';
+                        end if;
+        end; 
+    declare exit handler for sqlexception
+        
+    begin
+        #LEAVE loop1;
+      select 'sqlexception ERROR';
+      rollback;
+    end;  
+        
+        select count(*) into rescnt from  jira.customfieldvalue ;
+        
+        select 'total',rescnt;
+                
+    start transaction;
+
+    OPEN cur1;   
+    loop1: LOOP   
+    FETCH cur1 INTO p_cfname,p_isssubject ,p_customvalue;   
+
+        
+                select id into p_fldid from bitnami_redmine.custom_fields
+                where name = p_cfname;
+                
+                select id into p_issid from bitnami_redmine.issues
+                where subject = p_isssubject;
+            
+                insert into bitnami_redmine.custom_values
+                (customized_type,customized_id,custom_field_id,value)
+                values
+                ('Issue',p_issid,p_fldid,p_customvalue);
+                
+                set cnt = row_count() + cnt;
+                
+                if row_count() = 0 then
+                                                        select cnt,'effected';
+                            select 'alert:something wrong!';
+                            LEAVE loop1;
+        end if;
+                
+                        
+                
+                
+        
+    IF done=1 THEN   
+    LEAVE loop1;   
+    END IF;
+        
+    END LOOP loop1;   
+    
+        CLOSE cur1;
+        
+                if rescnt <> cnt then
+            rollback;
+            select '<>';
+        else
+            commit;  
+            select cnt,'commit';
+        end if;
+                
+END ;
+
+call bitnami_redmine.custfidval_mig();
