@@ -1,6 +1,10 @@
-﻿step 1 user to user  & group to group   用户和组  转换 
+﻿step 1  用户和组  转换 
+	1.1  group 
+	1.2  user  
 step 2 issuetype to trackers 问题类型 转换成 跟踪标签
 step 3 status to issue_statuses 状态 转换成问题状态
-step 4 custom_field 转换
-step 5 priorities into enumerations
-step 6 project 
+step 4 priorities into enumerations
+step 5 project 
+step 6 issue 
+step 7 custom_field & value
+
