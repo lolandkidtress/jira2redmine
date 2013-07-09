@@ -1,4 +1,4 @@
-/*
+﻿/*
 select * from projects;
 select * from projects_trackers; 
 select * from enabled_modules; 模块
@@ -9,7 +9,7 @@ issue_categories 问题类别
 insert into bitnami_redmine.projects
 (name,homepage,is_public,identifier,status,created_on)
 select pname,url,'0',pkey,'1',sysdate() from jira.project
-where pname not in (select name from bitnami_redmine.projects)
+where pname not in (select name from bitnami_redmine.projects);
 
 
 /*
@@ -101,11 +101,11 @@ call bitnami_redmine.pj_lft_rgt();
 projects_trackers; 
 */
 
-insert into projects_trackers
-select pj.id,tracker.id from trackers tracker,projects pj
-where pj.id not in (select project_id from projects_trackers )
+insert into bitnami_redmine.projects_trackers
+select pj.id,tracker.id from bitnami_redmine.trackers tracker,bitnami_redmine.projects pj
+where pj.id not in (select project_id from bitnami_redmine.projects_trackers )
 group by pj.id,tracker.id
-order by pj.id,tracker.id
+order by pj.id,tracker.id;
 
 /*
 enabled_modules
@@ -114,9 +114,9 @@ enabled_modules
 insert into bitnami_redmine.enabled_modules
 (project_id,name)
 select pj.id,module.name from bitnami_redmine.enabled_modules module,bitnami_redmine.projects pj
-where pj.id not in (select distinct(project_id) from enabled_modules)
+where pj.id not in (select distinct(project_id) from bitnami_redmine.enabled_modules)
 group by pj.id,module.name
-order by  pj.id,module.name
+order by  pj.id,module.name;
 
 
 
@@ -128,7 +128,7 @@ wikis
 insert into bitnami_redmine.wikis
 (project_id,start_page,status)
 select id,identifier,1 from bitnami_redmine.projects pj
-where id not in (select project_id from bitnami_redmine.wikis)
+where id not in (select project_id from bitnami_redmine.wikis);
 
 
 

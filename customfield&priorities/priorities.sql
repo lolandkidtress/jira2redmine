@@ -56,4 +56,4 @@ BEGIN
 END 
 ;
 
-call enumerations();
+call bitnami_redmine.enumerations();

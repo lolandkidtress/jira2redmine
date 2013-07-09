@@ -41,7 +41,7 @@ case
  then 255
  else '0' 
  end max_length
- ,'0' as is_required,'1' as is_for_all,  /*is_required and is_visible will be fixed later*/
+ ,'0' as is_required,'0' as is_for_all,  /*is_required and visible will be fixed later*/
 '0' is_filter, '1' as searchable, 
 '' as default_value, '1' as editable, 
 '1' as visible,'0' multiple
@@ -168,22 +168,20 @@ BEGIN
 END 
 ;
 
-call fieldoption()
+call bitnami_redmine.fieldoption();
 
 
 
 /*
 custom_fields_trackers
 */
-
 insert into bitnami_redmine.custom_fields_trackers 
 (custom_field_id,tracker_id)
 select fields.id,trackers.id from
-(select distinct(id) from custom_fields 
+(select distinct(id) from bitnami_redmine.custom_fields 
  where custom_fields.id not in 
-    (select distinct(custom_field_id) from custom_fields_trackers)) fields,
-(select distinct(id) from trackers) trackers;
-
+    (select distinct(custom_field_id) from bitnami_redmine.custom_fields_trackers)) fields,
+(select distinct(id) from bitnami_redmine.trackers) trackers;
 
 
 /* 
@@ -293,7 +291,7 @@ BEGIN
     loop1: LOOP   
     FETCH cur1 INTO p_cfname,p_isssubject ,p_customvalue;   
 
-        
+                
                 select id into p_fldid from bitnami_redmine.custom_fields
                 where name = p_cfname;
                 
@@ -336,3 +334,15 @@ BEGIN
 END ;
 
 call bitnami_redmine.custfidval_mig();
+
+
+
+/*
+field refer to project
+*/
+
+insert into bitnami_redmine.custom_fields_projects
+select a.id,b.id from bitnami_redmine.custom_fields a,bitnami_redmine.projects b
+
+
+

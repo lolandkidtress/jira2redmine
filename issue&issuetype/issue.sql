@@ -54,6 +54,7 @@ BEGIN
     DECLARE CONTINUE HANDLER FOR NOT FOUND 
     begin
 			SET done=1; 
+			
     end; 
 		
 		DECLARE exit handler for sqlexception
@@ -82,7 +83,7 @@ BEGIN
 		p_status_id,
 		p_assigned_to_id,
 		p_priority_id,
-		p_author_id ,
+		p_author_id , ##需要校验作者是否存在
 		p_lock_version,
 		p_created_on,
 		p_updated_on ,
@@ -126,18 +127,20 @@ BEGIN
 				select id into p_id from bitnami_redmine.issues
 				where tracker_id = p_tracker_id 
 					and project_id = p_project_id
-					and subject = p_subject;
+					and subject = p_subject
+					LIMIT 1;
 				
-				
+
 				update bitnami_redmine.issues		
 				set root_id=p_id
 				where tracker_id = p_tracker_id
 					and project_id = p_project_id
 					and subject = p_subject;
 				
+				/*
 				set cnt = row_count() + cnt;
-				
-				
+				*/
+				set cnt = cnt +1 ;
 				
 		END LOOP loop1;
     CLOSE cur1; 
@@ -157,3 +160,23 @@ END
 ;
 
 call bitnami_redmine.issue_mig();
+
+
+
+##migration issue custome field 
+
+/*
+select fld.cfname,iss.summary as issuesubject,
+concat(ifnull(fldv.stringvalue,''),ifnull(fldv.numbervalue,''),ifnull(fldv.textvalue,''),
+ifnull(date_format(fldv.datevalue,'%Y/%m/%d %k:%i:%s'),'')) as fldvalue
+from jira.customfieldvalue fldv,jira.jiraissue iss,jira.customfield fld
+where fldv.ISSUE = iss.ID 
+	and fld.ID=fldv.ID
+	order by issuesubject,cfname
+*/
+
+
+
+
+
+
