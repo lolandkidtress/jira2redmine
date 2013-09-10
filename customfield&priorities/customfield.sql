@@ -265,14 +265,17 @@ BEGIN
 
         begin
             set done = 1;
-            #select 'NOT FOUND';
-                            set cnt = row_count() + cnt;
+            select 'NEXT NOT FOUND';
+                        set cnt = row_count() + cnt;
                         if cnt <> 0 then
                             select cnt,'effected';
+                                                        #LEAVE loop1;
                         else
-                            select 'alert:something wrong!';
+                            select 'NOT FOUND:cnt =0!';
                         end if;
         end; 
+                
+                
     declare exit handler for sqlexception
         
     begin
@@ -288,10 +291,14 @@ BEGIN
     start transaction;
 
     OPEN cur1;   
-    loop1: LOOP   
+    REPEAT 
     FETCH cur1 INTO p_cfname,p_isssubject ,p_customvalue;   
-
-                
+    /*
+        IF done=1 THEN   
+    #LEAVE loop1;   
+    END REPEAT;
+        END IF;
+     */           
                 select id into p_fldid from bitnami_redmine.custom_fields
                 where name = p_cfname;
                 
@@ -302,28 +309,23 @@ BEGIN
                 (customized_type,customized_id,custom_field_id,value)
                 values
                 ('Issue',p_issid,p_fldid,p_customvalue);
-                
-                set cnt = row_count() + cnt;
-                
+                                
+                                set cnt = row_count() + cnt;
+                                
+                select p_issid,p_fldid,p_customvalue,'value';
+                                
                 if row_count() = 0 then
                                                         select cnt,'effected';
-                            select 'alert:something wrong!';
-                            LEAVE loop1;
-        end if;
-                
-                        
-                
-                
+                            select 'row_count=0 error';
+                            #LEAVE loop1;
+                                                        set done = 1;
+                end if;
         
-    IF done=1 THEN   
-    LEAVE loop1;   
-    END IF;
-        
-    END LOOP loop1;   
-    
+    #END LOOP loop1;   
+    UNTIL DONE END REPEAT;
         CLOSE cur1;
-        
-                if rescnt <> cnt then
+        select rescnt,cnt ;
+        if rescnt <> cnt then
             rollback;
             select '<>';
         else
